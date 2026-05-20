@@ -1,0 +1,14 @@
+US10,847,012 - Transformer-based NLP System
+
+A transformer-based natural language processing system comprising an encoder-decoder 
+architecture with multi-head self-attention mechanisms. The system includes a plurality 
+of attention heads configured to compute scaled dot-product attention over input token 
+sequences. A novel positional encoding scheme enables the model to process variable-length 
+sequences. The method provides significant improvements in machine translation, text 
+summarization, and question-answering tasks.
+
+Claims:
+1. A method for training large language models using masked language modeling objectives.
+2. Apparatus for efficient inference using knowledge distillation techniques.
+3. A system for fine-tuning pre-trained transformer models on domain-specific patent 
+   corpora using contrastive learning.

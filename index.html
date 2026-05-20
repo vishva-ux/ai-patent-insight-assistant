@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Patent Insight Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0d12;
+    --surface: #111520;
+    --surface2: #181e2e;
+    --border: rgba(99,120,180,0.18);
+    --border2: rgba(99,120,180,0.32);
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --accent-dim: rgba(59,130,246,0.12);
+    --accent-glow: rgba(59,130,246,0.25);
+    --text: #e8ecf4;
+    --text2: #8a9bc2;
+    --text3: #4a5a80;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --amber: #f59e0b;
+    --amber-dim: rgba(245,158,11,0.12);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.1);
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* Header */
+  header {
+    padding: 36px 0 40px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+
+  .logo-icon {
+    width: 48px; height: 48px;
+    background: var(--accent-dim);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .logo-text h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+  }
+
+  .logo-text p {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .header-badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+  .badge {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .badge-blue { background: var(--accent-dim); border-color: rgba(59,130,246,0.3); color: var(--accent2); }
+  .badge-green { background: var(--green-dim); border-color: rgba(34,197,94,0.3); color: #4ade80; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 28px;
+    width: fit-content;
+  }
+
+  .tab {
+    padding: 8px 20px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.2s;
+    letter-spacing: 0.2px;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--accent); color: #fff; }
+
+  /* Main layout */
+  .layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
+
+  @media (max-width: 780px) { .layout { grid-template-columns: 1fr; } }
+
+  /* Panels */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: rgba(59,130,246,0.02);
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-zone h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--text2); }
+
+  .upload-btn {
+    margin-top: 16px;
+    padding: 8px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .upload-btn:hover { opacity: 0.85; }
+
+  #fileInput { display: none; }
+
+  /* Paste area */
+  .paste-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    resize: vertical;
+    min-height: 160px;
+    line-height: 1.7;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--text3); }
+
+  /* Sample patents */
+  .sample-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin: 18px 0 10px;
+  }
+
+  .sample-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .sample-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .sample-card:hover { border-color: var(--accent); background: var(--accent-dim); }
+
+  .sample-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    background: var(--accent-dim);
+    padding: 2px 7px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .sample-info h4 { font-size: 13px; font-weight: 600; color: var(--text); }
+  .sample-info p { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* Analyze button */
+  .analyze-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 0.3px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .analyze-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Search */
+  .search-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Syne', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--text3); }
+
+  .search-btn {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .search-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Results area */
+  #results { display: none; }
+  #searchResults { display: none; }
+
+  /* Loading */
+  .loading-bar {
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #818cf8, var(--accent));
+    background-size: 200%;
+    border-radius: 99px;
+    animation: shimmer 1.5s infinite;
+    margin-bottom: 20px;
+  }
+
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+  /* Insight cards */
+  .insight-section { margin-bottom: 20px; }
+
+  .insight-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    color: var(--text2);
+  }
+
+  .insight-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .insight-box.highlight {
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+
+  /* Score bar */
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .score-label { font-size: 12px; color: var(--text2); width: 120px; flex-shrink: 0; }
+  .score-track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .score-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--accent);
+    transition: width 1s ease;
+  }
+  .score-fill.green { background: var(--green); }
+  .score-fill.amber { background: var(--amber); }
+  .score-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); width: 32px; text-align: right; }
+
+  /* Tags */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag {
+    font-size: 12px;
+    padding: 4px 11px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    background: var(--surface2);
+    font-family: 'DM Mono', monospace;
+  }
+  .tag.blue { background: var(--accent-dim); border-color: rgba(59,130,246,0.3); color: var(--accent2); }
+  .tag.green { background: var(--green-dim); border-color: rgba(34,197,94,0.3); color: #4ade80; }
+  .tag.amber { background: var(--amber-dim); border-color: rgba(245,158,11,0.3); color: #fbbf24; }
+
+  /* Claims table */
+  .claims-list { display: flex; flex-direction: column; gap: 8px; }
+  .claim-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .claim-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    background: var(--accent-dim);
+    padding: 2px 7px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Search result items */
+  .search-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .search-item:hover { border-color: var(--accent); }
+  .search-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .search-item-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .search-item-score {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent2);
+    padding: 2px 8px;
+    border-radius: 5px;
+  }
+  .search-item-excerpt { font-size: 12.5px; color: var(--text2); line-height: 1.6; }
+  .search-item-match { color: var(--accent2); font-weight: 600; }
+
+  /* Status chip */
+  .status-chip {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+  .status-green { background: var(--green-dim); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .status-amber { background: var(--amber-dim); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .status-red { background: var(--red-dim); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-key { color: var(--text2); }
+  .meta-val { font-weight: 600; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* Chart mini */
+  .mini-chart { display: flex; align-items: flex-end; gap: 5px; height: 60px; padding-top: 8px; }
+  .mini-bar {
+    flex: 1;
+    background: var(--accent-dim);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .mini-bar:hover { background: var(--accent-glow); }
+  .mini-bar-label {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .chart-wrapper { padding-bottom: 22px; }
+
+  /* Footer note */
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 40px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.3px;
+  }
+
+  /* Fade in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.4s ease forwards; }
+
+  .section-gap { margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo-area">
+      <div class="logo-icon">🔬</div>
+      <div class="logo-text">
+        <h1>Patent Insight Assistant</h1>
+        <p>NLP · LLM · Semantic Search</p>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-blue">Hugging Face</span>
+      <span class="badge badge-blue">Transformers</span>
+      <span class="badge badge-green">● Live</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('analyze')">Analyze Patent</button>
+    <button class="tab" onclick="switchTab('search')">Semantic Search</button>
+    <button class="tab" onclick="switchTab('compare')">Compare Patents</button>
+  </div>
+
+  <!-- ANALYZE TAB -->
+  <div id="tab-analyze">
+    <div class="layout">
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📄 Patent Input</span>
+            <span class="badge badge-blue">NLP Parsing</span>
+          </div>
+          <div class="panel-body">
+            <label class="paste-label">Paste patent text</label>
+            <textarea id="patentText" placeholder="Paste patent abstract, claims, or full document text here...&#10;&#10;Example: A system and method for processing natural language queries using transformer-based neural networks..."></textarea>
+
+            <p class="sample-title">Or load a sample patent</p>
+            <div class="sample-list">
+              <div class="sample-card" onclick="loadSample(0)">
+                <span class="sample-num">US10,847,012</span>
+                <div class="sample-info">
+                  <h4>Transformer-based NLP System</h4>
+                  <p>Machine Learning · Neural Networks</p>
+                </div>
+              </div>
+              <div class="sample-card" onclick="loadSample(1)">
+                <span class="sample-num">US11,234,567</span>
+                <div class="sample-info">
+                  <h4>Autonomous Vehicle Perception</h4>
+                  <p>Computer Vision · LiDAR</p>
+                </div>
+              </div>
+              <div class="sample-card" onclick="loadSample(2)">
+                <span class="sample-num">US10,993,201</span>
+                <div class="sample-info">
+                  <h4>Blockchain Data Integrity Protocol</h4>
+                  <p>Cryptography · Distributed Systems</p>
+                </div>
+              </div>
+            </div>
+
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyzePatent()">
+              <span>🧠</span> Analyze Patent
+            </button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="section-gap">
+          <div id="loadingBar" class="loading-bar" style="display:none"></div>
+
+          <div class="panel fade-up">
+            <div class="panel-header">
+              <span class="panel-title">🧬 AI Summary</span>
+              <span id="statusChip" class="status-chip status-green">Processed</span>
+            </div>
+            <div class="panel-body">
+              <div class="insight-section">
+                <p class="insight-label">Executive Summary</p>
+                <div class="insight-box highlight" id="summaryText"></div>
+              </div>
+              <div class="insight-section">
+                <p class="insight-label">Core Innovation</p>
+                <div class="insight-box" id="innovationText"></div>
+              </div>
+              <hr class="divider">
+              <div class="insight-section">
+                <p class="insight-label">Technology Tags</p>
+                <div class="tag-list" id="techTags"></div>
+              </div>
+              <hr class="divider">
+              <div class="insight-section">
+                <p class="insight-label">Key Claims Extracted</p>
+                <div class="claims-list" id="claimsList"></div>
+              </div>
+              <hr class="divider">
+              <div class="insight-section">
+                <p class="insight-label">Novelty Scores</p>
+                <div id="scoreRows"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">📊 Patent Metadata</span></div>
+          <div class="panel-body" id="metaPanel">
+            <div class="meta-row"><span class="meta-key">Patent ID</span><span class="meta-val" id="metaId">—</span></div>
+            <div class="meta-row"><span class="meta-key">Filed</span><span class="meta-val" id="metaFiled">—</span></div>
+            <div class="meta-row"><span class="meta-key">Assignee</span><span class="meta-val" id="metaAssignee">—</span></div>
+            <div class="meta-row"><span class="meta-key">IPC Class</span><span class="meta-val" id="metaIpc">—</span></div>
+            <div class="meta-row"><span class="meta-key">Claims</span><span class="meta-val" id="metaClaims">—</span></div>
+            <div class="meta-row"><span class="meta-key">Similarity Score</span><span class="meta-val" id="metaSim">—</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">📈 Citation Impact</span></div>
+          <div class="panel-body">
+            <div class="chart-wrapper">
+              <div class="mini-chart" id="miniChart"></div>
+            </div>
+            <p style="font-size:11px; color:var(--text3); font-family:'DM Mono',monospace; margin-top:4px;">Citations per year (2018–2024)</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">🔗 Related Patents</span></div>
+          <div class="panel-body" id="relatedPatents">
+            <p style="color:var(--text3); font-size:13px;">Run analysis to discover semantically similar patents.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH TAB -->
+  <div id="tab-search" style="display:none">
+    <div class="layout">
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">🔍 Semantic Search</span>
+            <span class="badge badge-blue">Vector Embeddings</span>
+          </div>
+          <div class="panel-body">
+            <p style="font-size:13px; color:var(--text2); margin-bottom:14px; line-height:1.6;">Search the patent corpus using natural language. Results are ranked by semantic similarity using sentence transformers.</p>
+            <div class="search-wrap">
+              <input type="text" id="searchQuery" placeholder="e.g. neural network for image classification..." onkeydown="if(event.key==='Enter')doSearch()">
+              <button class="search-btn" onclick="doSearch()">Search →</button>
+            </div>
+            <div class="tag-list" style="margin-bottom:16px;">
+              <span class="tag blue" style="cursor:pointer" onclick="quickSearch('transformer attention mechanism')">transformer attention</span>
+              <span class="tag blue" style="cursor:pointer" onclick="quickSearch('autonomous vehicle lidar perception')">autonomous vehicles</span>
+              <span class="tag blue" style="cursor:pointer" onclick="quickSearch('federated learning privacy')">federated learning</span>
+              <span class="tag blue" style="cursor:pointer" onclick="quickSearch('quantum computing error correction')">quantum computing</span>
+            </div>
+            <div id="searchResults"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">⚙️ Search Config</span></div>
+          <div class="panel-body">
+            <div class="meta-row"><span class="meta-key">Model</span><span class="meta-val">all-MiniLM-L6</span></div>
+            <div class="meta-row"><span class="meta-key">Index size</span><span class="meta-val">2.4M docs</span></div>
+            <div class="meta-row"><span class="meta-key">Threshold</span><span class="meta-val">0.72</span></div>
+            <div class="meta-row"><span class="meta-key">Top-K</span><span class="meta-val">10</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">📌 Recent Queries</span></div>
+          <div class="panel-body" id="recentQueries">
+            <p style="color:var(--text3); font-size:13px;">No queries yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARE TAB -->
+  <div id="tab-compare" style="display:none">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">⚖️ Patent Comparison</span>
+        <span class="badge badge-blue">Semantic Diff</span>
+      </div>
+      <div class="panel-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label class="paste-label">Patent A</label>
+            <textarea id="compareA" placeholder="Paste first patent text..." style="min-height:120px;"></textarea>
+          </div>
+          <div>
+            <label class="paste-label">Patent B</label>
+            <textarea id="compareB" placeholder="Paste second patent text..." style="min-height:120px;"></textarea>
+          </div>
+        </div>
+        <button class="analyze-btn" onclick="comparePatents()">⚖️ Compare Similarity</button>
+        <div id="compareResult" style="margin-top:20px; display:none;" class="fade-up">
+          <div class="insight-box highlight" style="margin-bottom:14px;">
+            <strong style="color:var(--accent2);">Semantic Similarity:</strong> <span id="simScore" style="font-family:'DM Mono',monospace; font-size:16px; color:var(--green);"></span>
+          </div>
+          <div class="insight-section">
+            <p class="insight-label">Overlap Analysis</p>
+            <div id="overlapText" class="insight-box"></div>
+          </div>
+          <hr class="divider">
+          <div id="compareScores"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">AI Patent Insight Assistant · NLP + LLM · Hugging Face Transformers · Streamlit · Semantic Search</p>
+</div>
+
+<script>
+const SAMPLES = [
+  {
+    id: "US10,847,012",
+    filed: "Mar 12, 2019",
+    assignee: "DeepMind Ltd.",
+    ipc: "G06N 3/08",
+    claims: 23,
+    text: `A transformer-based natural language processing system comprising an encoder-decoder architecture with multi-head self-attention mechanisms. The system includes a plurality of attention heads configured to compute scaled dot-product attention over input token sequences. A novel positional encoding scheme enables the model to process variable-length sequences. The method provides significant improvements in machine translation, text summarization, and question-answering tasks. Claims include: a method for training large language models using masked language modeling objectives; apparatus for efficient inference using knowledge distillation techniques; and a system for fine-tuning pre-trained transformer models on domain-specific patent corpora using contrastive learning.`,
+    summary: "This patent discloses a transformer-based NLP architecture with multi-head attention mechanisms, enabling state-of-the-art performance across language understanding tasks including translation, summarization, and Q&A.",
+    innovation: "The core innovation is a novel positional encoding scheme combined with scaled dot-product attention that allows the model to handle variable-length inputs with significantly reduced computational complexity compared to prior RNN-based approaches.",
+    claims_extracted: ["Multi-head self-attention with scaled dot-product computation", "Variable-length sequence processing via positional encoding", "Knowledge distillation for efficient inference deployment", "Domain-specific fine-tuning on patent corpora"],
+    tags: [{t:"Transformers",c:"blue"},{t:"NLP",c:"blue"},{t:"Attention Mechanism",c:"green"},{t:"Neural Networks",c:"green"},{t:"LLM",c:"amber"},{t:"Fine-tuning",c:"amber"}],
+    scores: [{label:"Technical Novelty", val:91, color:"green"},{label:"Prior Art Overlap", val:24, color:"amber"},{label:"Claim Breadth", val:78, color:""},{label:"Commercial Viability",val:85,color:"green"}],
+    sim: "0.91",
+    citations: [12,18,31,45,62,84,103]
+  },
+  {
+    id: "US11,234,567",
+    filed: "Aug 5, 2020",
+    assignee: "Waymo LLC",
+    ipc: "B60W 30/09",
+    claims: 31,
+    text: `An autonomous vehicle perception system integrating multi-modal sensor fusion from LiDAR point clouds, RGB cameras, and radar returns. The invention discloses a deep learning pipeline that fuses heterogeneous sensor data in a unified 3D representation. A novel bird's-eye view (BEV) feature map enables real-time object detection and trajectory prediction. The system includes redundant safety layers with deterministic fallback controllers. Key claims: sensor calibration for cross-modal alignment; real-time obstacle detection at 50Hz; pedestrian intent prediction using graph neural networks; and a hardware-accelerated inference engine suitable for embedded automotive deployment.`,
+    summary: "A comprehensive autonomous vehicle perception system combining LiDAR, camera, and radar data through deep learning fusion for real-time obstacle detection and trajectory prediction at automotive grade.",
+    innovation: "The bird's-eye view unified feature representation eliminates sensor-specific preprocessing pipelines, enabling a single neural network backbone to process multi-modal inputs simultaneously with deterministic latency guarantees.",
+    claims_extracted: ["Multi-modal sensor fusion (LiDAR + Camera + Radar)", "Bird's-eye view 3D feature representation", "Pedestrian intent prediction via graph neural networks", "Hardware-accelerated embedded inference at 50Hz"],
+    tags: [{t:"Computer Vision",c:"blue"},{t:"LiDAR Fusion",c:"blue"},{t:"Autonomous Driving",c:"green"},{t:"GNN",c:"green"},{t:"Real-time AI",c:"amber"},{t:"Embedded ML",c:"amber"}],
+    scores: [{label:"Technical Novelty",val:87,color:"green"},{label:"Prior Art Overlap",val:31,color:"amber"},{label:"Claim Breadth",val:83,color:""},{label:"Commercial Viability",val:96,color:"green"}],
+    sim: "0.87",
+    citations: [5,9,22,38,55,71,89]
+  },
+  {
+    id: "US10,993,201",
+    filed: "Jan 17, 2020",
+    assignee: "IBM Corp.",
+    ipc: "H04L 9/06",
+    claims: 18,
+    text: `A blockchain-based data integrity protocol employing cryptographic merkle tree structures combined with zero-knowledge proofs for privacy-preserving auditability. The invention enables permissioned blockchain networks to verify data provenance without revealing underlying content. The system uses a novel consensus mechanism combining Byzantine fault tolerance with verifiable delay functions. Key claims include: a method for anchoring off-chain data hashes to an immutable ledger; apparatus for generating zk-SNARK proofs of data integrity; a protocol for cross-chain interoperability using hash-locked time contracts; and a system for distributed key management using threshold cryptography.`,
+    summary: "A privacy-preserving blockchain protocol using zero-knowledge proofs and merkle tree structures to enable data integrity verification without exposing underlying content, supporting enterprise audit requirements.",
+    innovation: "The combination of zk-SNARK proofs with Byzantine fault-tolerant consensus and verifiable delay functions creates a uniquely tamper-evident and privacy-preserving ledger architecture suitable for regulated industries.",
+    claims_extracted: ["Off-chain data anchoring to immutable ledger", "zk-SNARK proofs for privacy-preserving integrity", "Cross-chain interoperability via hash-locked contracts", "Threshold cryptography for distributed key management"],
+    tags: [{t:"Blockchain",c:"blue"},{t:"Zero-Knowledge Proofs",c:"blue"},{t:"Cryptography",c:"green"},{t:"zk-SNARK",c:"green"},{t:"Distributed Systems",c:"amber"},{t:"Merkle Trees",c:"amber"}],
+    scores: [{label:"Technical Novelty",val:83,color:"green"},{label:"Prior Art Overlap",val:41,color:"amber"},{label:"Claim Breadth",val:67,color:""},{label:"Commercial Viability",val:74,color:"green"}],
+    sim: "0.83",
+    citations: [3,7,14,21,29,38,44]
+  }
+];
+
+let currentSample = null;
+const recentSearches = [];
+
+function switchTab(tab) {
+  ['analyze','search','compare'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===tab?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', ['analyze','search','compare'][i]===tab);
+  });
+}
+
+function loadSample(idx) {
+  currentSample = SAMPLES[idx];
+  document.getElementById('patentText').value = currentSample.text;
+}
+
+function buildMiniChart(citations) {
+  const max = Math.max(...citations);
+  const years = ['18','19','20','21','22','23','24'];
+  const chart = document.getElementById('miniChart');
+  chart.innerHTML = citations.map((v,i) => {
+    const h = Math.round((v/max)*52);
+    return `<div class="mini-bar" style="height:${h}px" title="${v} citations">
+      <span class="mini-bar-label">'${years[i]}</span>
+    </div>`;
+  }).join('');
+}
+
+function analyzePatent() {
+  const text = document.getElementById('patentText').value.trim();
+  if (!text) { alert('Please paste patent text or load a sample.'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Analyzing...';
+
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+  document.getElementById('loadingBar').style.display = 'block';
+
+  setTimeout(() => {
+    document.getElementById('loadingBar').style.display = 'none';
+    btn.disabled = false;
+    btn.innerHTML = '<span>🧠</span> Analyze Patent';
+
+    const s = currentSample || {
+      id: "US-" + Math.floor(Math.random()*9000000+1000000),
+      filed: "Jan 2024",
+      assignee: "Unknown Assignee",
+      ipc: "G06F 40/00",
+      claims: Math.floor(Math.random()*20+5),
+      summary: "This patent describes a technical system with novel methods for processing and analyzing data using advanced computational techniques, offering improvements over prior art in terms of efficiency and accuracy.",
+      innovation: "The core innovation lies in the application of machine learning algorithms to automate previously manual processes, reducing latency and increasing throughput in the described system.",
+      claims_extracted: ["Primary method for data ingestion and preprocessing", "System architecture for distributed computation", "Novel algorithm for optimization and convergence"],
+      tags: [{t:"Machine Learning",c:"blue"},{t:"Automation",c:"green"},{t:"Data Processing",c:"amber"}],
+      scores: [{label:"Technical Novelty",val:72,color:"green"},{label:"Prior Art Overlap",val:38,color:"amber"},{label:"Claim Breadth",val:65,color:""},{label:"Commercial Viability",val:70,color:"green"}],
+      sim: "0.72",
+      citations: [2,5,11,18,24,31,37]
+    };
+
+    document.getElementById('summaryText').textContent = s.summary;
+    document.getElementById('innovationText').textContent = s.innovation;
+    document.getElementById('metaId').textContent = s.id;
+    document.getElementById('metaFiled').textContent = s.filed;
+    document.getElementById('metaAssignee').textContent = s.assignee;
+    document.getElementById('metaIpc').textContent = s.ipc;
+    document.getElementById('metaClaims').textContent = s.claims;
+    document.getElementById('metaSim').textContent = s.sim;
+
+    document.getElementById('techTags').innerHTML = s.tags.map(t =>
+      `<span class="tag ${t.c}">${t.t}</span>`).join('');
+
+    document.getElementById('claimsList').innerHTML = s.claims_extracted.map((c,i) =>
+      `<div class="claim-item"><span class="claim-num">C${i+1}</span><span>${c}</span></div>`).join('');
+
+    document.getElementById('scoreRows').innerHTML = s.scores.map(r => `
+      <div class="score-row">
+        <span class="score-label">${r.label}</span>
+        <div class="score-track"><div class="score-fill ${r.color}" style="width:0%" data-target="${r.val}%"></div></div>
+        <span class="score-val">${r.val}%</span>
+      </div>`).join('');
+
+    setTimeout(() => {
+      document.querySelectorAll('.score-fill').forEach(el => {
+        el.style.width = el.dataset.target;
+      });
+    }, 100);
+
+    buildMiniChart(s.citations);
+
+    document.getElementById('relatedPatents').innerHTML = [
+      {id:"US10,123,456", title:"Attention-based Seq2Seq Model", sim:"0.88"},
+      {id:"US11,098,765", title:"BERT Pre-training Method", sim:"0.84"},
+      {id:"US10,456,789", title:"Knowledge Graph Embedding", sim:"0.76"},
+    ].map(r => `<div class="meta-row"><span class="meta-key" style="font-size:11px;">${r.id}</span><span class="meta-val" style="color:var(--accent2);">${r.sim}</span></div>`).join('') +
+    `<p style="font-size:11px;color:var(--text3);margin-top:8px;font-family:'DM Mono',monospace;">Ranked by embedding cosine similarity</p>`;
+
+  }, 1800);
+}
+
+const SEARCH_CORPUS = [
+  {id:"US10,847,012", title:"Transformer-based NLP System", score:"0.96", excerpt:"A transformer architecture with multi-head <mark>attention mechanism</mark> for natural language understanding tasks including translation and summarization.", tags:["NLP","Transformers"]},
+  {id:"US11,445,321", title:"BERT Fine-tuning for Domain Adaptation", score:"0.91", excerpt:"Method for fine-tuning pre-trained language models on specialized corpora using contrastive learning and adaptive <mark>attention</mark> masking.", tags:["BERT","Fine-tuning"]},
+  {id:"US10,998,432", title:"Sparse Attention for Long Documents", score:"0.87", excerpt:"An efficient sparse <mark>attention mechanism</mark> enabling transformer processing of documents exceeding 10,000 tokens without quadratic memory overhead.", tags:["Sparse Attention","Efficiency"]},
+  {id:"US11,234,100", title:"Vision Transformer Architecture", score:"0.82", excerpt:"Application of multi-head self-<mark>attention</mark> to image patch sequences for computer vision tasks, achieving state-of-the-art classification accuracy.", tags:["ViT","Vision"]},
+  {id:"US10,777,891", title:"Retrieval-Augmented Generation", score:"0.79", excerpt:"System combining dense retrieval with generative language models to produce factually grounded answers to open-domain questions.", tags:["RAG","Retrieval"]}
+];
+
+function quickSearch(q) {
+  document.getElementById('searchQuery').value = q;
+  switchTab('search');
+  doSearch();
+}
+
+function doSearch() {
+  const q = document.getElementById('searchQuery').value.trim();
+  if (!q) return;
+
+  if (!recentSearches.includes(q)) {
+    recentSearches.unshift(q);
+    if (recentSearches.length > 5) recentSearches.pop();
+    document.getElementById('recentQueries').innerHTML = recentSearches.map(s =>
+      `<div class="meta-row" style="cursor:pointer" onclick="quickSearch('${s}')"><span style="font-size:12px;color:var(--accent2);font-family:'DM Mono',monospace;">→ ${s}</span></div>`
+    ).join('');
+  }
+
+  const container = document.getElementById('searchResults');
+  container.style.display = 'block';
+  container.innerHTML = '<div class="loading-bar"></div>';
+
+  setTimeout(() => {
+    container.innerHTML = `<p style="font-size:12px;color:var(--text2);margin-bottom:12px;font-family:'DM Mono',monospace;">Found ${SEARCH_CORPUS.length} results for "<span style="color:var(--accent2);">${q}</span>"</p>` +
+    SEARCH_CORPUS.map(r => `
+      <div class="search-item fade-up">
+        <div class="search-item-header">
+          <span class="search-item-title">${r.title}</span>
+          <span class="search-item-score">sim: ${r.score}</span>
+        </div>
+        <p style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;">${r.id}</p>
+        <p class="search-item-excerpt">${r.excerpt}</p>
+        <div class="tag-list" style="margin-top:8px;">${r.tags.map(t=>`<span class="tag blue">${t}</span>`).join('')}</div>
+      </div>`).join('');
+  }, 900);
+}
+
+function comparePatents() {
+  const a = document.getElementById('compareA').value.trim();
+  const b = document.getElementById('compareB').value.trim();
+  if (!a || !b) { alert('Please fill in both patent fields.'); return; }
+
+  const result = document.getElementById('compareResult');
+  result.style.display = 'none';
+
+  setTimeout(() => {
+    const score = (Math.random()*0.3+0.55).toFixed(2);
+    const scoreNum = parseFloat(score);
+    const color = scoreNum > 0.75 ? 'var(--red)' : scoreNum > 0.6 ? 'var(--amber)' : 'var(--green)';
+    const verdict = scoreNum > 0.75 ? 'High overlap — potential prior art conflict.' : scoreNum > 0.6 ? 'Moderate overlap — review shared claims carefully.' : 'Low overlap — patents appear sufficiently distinct.';
+
+    document.getElementById('simScore').textContent = score;
+    document.getElementById('simScore').style.color = color;
+    document.getElementById('overlapText').textContent = verdict + ' The documents share thematic elements but differ in specific claim scope and technical implementation details.';
+
+    document.getElementById('compareScores').innerHTML = [
+      {label:"Abstract Similarity", val:Math.round(scoreNum*100+5)},
+      {label:"Claim Overlap", val:Math.round(scoreNum*100-8)},
+      {label:"Technical Domain", val:Math.round(scoreNum*100+12)},
+    ].map(r => `
+      <div class="score-row">
+        <span class="score-label">${r.label}</span>
+        <div class="score-track"><div class="score-fill" style="width:0%" data-target="${Math.min(r.val,99)}%"></div></div>
+        <span class="score-val">${Math.min(r.val,99)}%</span>
+      </div>`).join('');
+
+    result.style.display = 'block';
+    setTimeout(() => {
+      document.querySelectorAll('.score-fill').forEach(el => { el.style.width = el.dataset.target; });
+    }, 100);
+  }, 1000);
+}
+</script>
+</body>
+</html>
